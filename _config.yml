@@ -20,7 +20,7 @@ githubiverse:
     src_dir: src
 
     ## The headline image
-    lead_image: test-jig.jpg
+    lead_image: condition-left.png
     show_lead_image: true
 
     ## Optional. When uncommented appends the content of the file defined here to the project description.  Any text in index.md, after the yaml header, will be shown first.

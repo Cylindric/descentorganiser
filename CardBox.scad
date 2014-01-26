@@ -27,7 +27,7 @@ module base(height, width, depth)
 	}
 
 	// walls
-	difference()
+	difference()s
 	{
 		hull()
 		{

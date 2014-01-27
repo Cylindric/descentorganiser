@@ -1,12 +1,22 @@
+/*
+	Watch out, because all the surfaces are thin.
+	Slice with 100% infill
+*/
+
 card_type = "class";
 
-t=1;
+t=1.5;
 j=0.1;
 
 module case(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, labelOffset)
 {
 	base(height, width, depth);
-	translate([0, width+10, 0]) lid(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, labelOffset);
+	
+	translate([0, width+15, 0]) 
+	lid(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, labelOffset);
+
+	%translate([t*2, t*2, 0]) cube([height, width, depth]);
+	%translate([t*2, width+15+t*3, 0]) cube([height, width, depth]);
 }
 
 module base(height, width, depth)
@@ -18,16 +28,17 @@ module base(height, width, depth)
 	roundness2=roundness-t;
 
 	// base
+	translate([-t, -t, 0])
 	hull()
 	{	
 		translate([roundness-t, roundness-t, 0]) cylinder(r=roundness, h=t, $fn=20);
-		translate([h+t*3-roundness, roundness-t, 0]) cylinder(r=roundness, h=t, $fn=20);
-		translate([roundness-t, w+t*3-roundness, 0]) cylinder(r=roundness, h=t, $fn=20);
-		translate([h+t*3-roundness, w+t*3-roundness, 0]) cylinder(r=roundness, h=t, $fn=20);
+		translate([h+t*5-roundness, roundness-t, 0]) cylinder(r=roundness, h=t, $fn=20);
+		translate([roundness-t, w+t*5-roundness, 0]) cylinder(r=roundness, h=t, $fn=20);
+		translate([h+t*5-roundness, w+t*5-roundness, 0]) cylinder(r=roundness, h=t, $fn=20);
 	}
 
 	// walls
-	difference()s
+	difference()
 	{
 		hull()
 		{
@@ -48,8 +59,8 @@ module base(height, width, depth)
 
 module lid(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, labelOffset)
 {
-	h=height+t*5;
-	w=width+t*5;
+	h=height+t*4;
+	w=width+t*4;
 	d=depth+t;
 	r=holeX/2;
 	s=holeX/holeY;
@@ -101,7 +112,7 @@ module lid(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, label
 
 if(card_type == "class")
 {
-	case(height=66, width=44, depth=5, holeX=30, holeY=30, holeOffset=4, labelX=5, labelY=25, labelOffset=-18);
+	case(height=62, width=44, depth=5, holeX=30, holeY=30, holeOffset=4, labelX=5, labelY=25, labelOffset=-18);
 }
 if(card_type == "overlord")
 {

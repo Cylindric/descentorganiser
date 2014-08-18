@@ -1,134 +1,188 @@
 /*
 	Watch out, because all the surfaces are thin.
 	Slice with 100% infill
-
-	To try the size out, set debug_size to true and print the outline. 
-	Test the card while the thin print is still on the bed!
 */
 
+/* [Basic Settings] */
+
+// Which part to print?
+part = 0; // [0:Everything, 1:Lid Only, 2:Base Only; 3:DividerOnly]
+
 // Which type of box to print?
-card_type = "class";
+CardType = "class"; // [class:Character's class cards,overlord:Overlord cards,custom:Custom]
+
+// Cut a big window to show the card symbol?
+CutWindow = 1; //[1:Yes, 0:No]
+
+// Cut a window to show the card label?
+CutLabel = 1; //[1:Yes, 0:No]
+
+
+/* [Settings for Custom] */
+
+CustomHeight = 64;
+CustomWidth = 41;
+CustomThickness = 5;
+
+CustomWindowX = 30;
+CustomWindowY = 30;
+CustomWindowOffset = 4;
+
+CustomLabelX = 5;
+CustomLabelY = 25;
+CustomLabelOffset = -18;
+
+/* [Printer] */
+build_plate_selector = 0; //[0:Replicator 2,1: Replicator,2:Thingomatic,3:Manual]
+
+//when Build Plate Selector is set to "manual" this controls the build plate x dimension
+build_plate_manual_x = 180; //[100:400]
+
+//when Build Plate Selector is set to "manual" this controls the build plate y dimension
+build_plate_manual_y = 180; //[100:400]
+
+
+/* [Advanced] */
 
 // Thickness of the walls
-t=1.2;
+t = 1;
+
+// Margin around the cards
+Margin = 2;
+
+// Size of the overhang
+Overhang = 5;
+
+// Roundness
+Roundness = 3;
 
 // Small gap between the base and the lid
-gap=3;
+gap = 1;
 
-// Reinforce?
-reinforce=false;
+/* [Hidden] */
+
+// Sizes of the various predefined card types
+ClassSize = [64, 41, 5];
+ClassHole = [30, 30, 4]; // X,Y,Offset
+ClassLabel = [5, 25, -18]; // X,Y,Offset
+
+OverlordSize = [89, 58, 15];
+OverlordHole = [60, 40, 0]; // X,Y,Offset
+OverlordLabel = [0, 0, 0]; // X,Y,Offset
 
 // Jitter to ensure there are no coincident-surface problems
-j=0.1;
+j = 0.1;
 
 // Roundness detail. Mostly $fn will be set to this
-detail=20;
+detail = 50;
 
-// Enable this to print a simple outline to verify card size will fit
-debug_size=false;
+// Shortcuts used to make arrays easier to reference
+x=0; y=1; z=2;
 
-// Version
-version=1;
+use<utils/build_plate.scad>;
 
-module case(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, labelOffset)
+module TopBottom(card)
 {
-	base(height, width, depth);
-	
-	if(debug_size==false)
-	{
-		translate([0, width+15, 0]) 
-		lid(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, labelOffset);
+	h=card[x]+Margin+t+Overhang;
+	w=card[y]+Margin+t+Overhang;
 
-		translate([height/2+width/2+10, height/2, 0]) 
-		rotate([0, 0, 90]) 
-		divider(height, width);
+	roundbox([h, w, t], Roundness+Overhang/2-t*2, 0);
+}
+
+
+module case(card, hole, label)
+{
+	if(part == 0)
+	{
+		translate([-((card[x]+Margin+t+Overhang)+4+(card[y] + Margin / 2))/2, 0, 0])
+		translate([(card[x]+Margin+t+Overhang)/2, 0, 0])
+		union()
+		{
+			translate([0, 2, 0])
+			translate([0, (card[y]+Margin+t+Overhang)*0.5, 0])
+			base(card);
+
+			translate([0, -2, 0])
+			translate([0, -(card[y]+Margin+t+Overhang)*0.5, 0])
+			lid(card, hole, label);
+
+			translate([4, 0, 0])
+			translate([(card[y] + Margin / 2)/2, 0, 0])
+			translate([(card[x]+Margin+t+Overhang)/2, 0, 0])
+			rotate([0, 0, 90]) 
+			divider(card);
+		}
+	}
+	if(part == 1)
+	{
+		lid(card);
+	}
+	if(part == 2)
+	{
+		base(card);
+	}
+	if(part == 3)
+	{
+		divider(card);
 	}
 }
 
-module divider(height, width)
+
+module divider(card)
 {
-	h=height;
-	w=width;
+	h=card[x] + Margin / 2;
+	w=card[y] + Margin / 2;
 	roundness=t*3;
 
-	difference()
-	{
-		// base
-		roundbox([h, w, t], roundness, 0);
-		
-		//translate([15, -15, t/2])
-		//rotate([0, 0, 90])
-		//scale([0.8, 0.8, 1])
-		//linear_extrude(height=t)
-		//import("Descent-D.dxf");
-	}
+	roundbox([h, w, t], roundness, 0);
 }
 
 
-module base(height, width, depth)
+module base(card)
 {
 	// The actual size of the base is a bit (one "t") bigger than a card
-	h=height+t;
-	w=width+t;
-	d=depth+t;
-	roundness=t*3;
-
+	h=card[x]+Margin;
+	w=card[y]+Margin;
+	d=card[z]+Margin;
+	
 	union()
 	{
 		difference()
 		{
 			union()
 			{
-				if(reinforce)
-				{
-					// Thin base (widest part)
-					roundbox([h+t*4, w+t*4, t], roundness, 0);
-
-					// Reinforcement
-					roundbox([h+t*3, w+t*3, t*2], roundness, 0);
-				}
-				else
-				{
-					// Thin base (widest part)
-					roundbox([h+t*3, w+t*3, t], roundness, 0);
-				}
+				// Thin base (widest part)
+				TopBottom(card);
 
 				// Walls
-				roundbox([h+t*2, w+t*2, d+t], roundness, 0);
+				roundbox([h+t*2, w+t*2, d+t], Roundness, t);
 			}
-			
-			// Main hole
-			translate([0, 0, t]) 
-			roundbox([h, w, d+j], roundness, 0);
-			
+
 			// Thumb holes
 			translate([0, 0, d+t*2]) scale([1, 1, d/(w/3)]) 
 			rotate([0, 90, 0]) 
 			cylinder(r=w/3, h=h+t*2+j*2, center=true, $fn=detail);
 			
 		}
-		
-		// sample box for the cards
-		//%translate([0, 0, t]) roundbox([height, width, depth], roundness, 0);
 	}
 }
 
-module lid(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, labelOffset)
+
+module lid(card, hole, label)
 {
-	// The size of the base is a bit (one "t") bigger than a card
-	base_h=height+t;
-	base_w=width+t;
-	base_d=depth+t;
+	// The outer size of the base is a bit (one "t") bigger than a card
+	base_h=card[x]+Margin+t;
+	base_w=card[y]+Margin+t;
+	base_d=card[z]+Margin+t;
 	
 	// The size of the lid is a bit (gap) bigger than the base all around
-	h=base_h+gap+t*2;
-	w=base_w+gap+t*2;
+	h=base_h+gap+t;
+	w=base_w+gap+t;
 	d=base_d;
 
-	r=holeX/2;
-	s=holeX/holeY;
-	o=holeOffset;
-	roundness=t*3;
+	r=hole[x]/2;
+	s=hole[x]/ (hole[y] == 0 ? 1 : hole[y]); // prevent DivZero
+	o=hole[z];
 
 	union()
 	{
@@ -136,52 +190,27 @@ module lid(height, width, depth, holeX, holeY, holeOffset, labelX, labelY, label
 		{
 			union()
 			{
-				if(reinforce)
-				{
-					// Thin base (widest part)
-					roundbox([h+t*4, w+t*4, t], roundness, 0);
-
-					// Reinforcement
-					roundbox([h+t*3, w+t*3, t*2], roundness, 0);
-				}
-				else
-				{
-					// Thin base (widest part)
-					roundbox([h+t*3, w+t*3, t], roundness, 0);
-				}
+				// Thin base (widest part)
+				TopBottom(card);
 
 				// Walls
-				roundbox([h+t*2, w+t*2, d+t], roundness, 0);
+				roundbox([h+t*2, w+t*2, d+t], Roundness+t, t);
 			}
-			
-			// Main hole
-			translate([0, 0, t]) 
-			roundbox([h, w, d+j], roundness, 0);
-			
-			// Window
-			translate([o, 0, -j]) scale([1, 1/s, 1]) cylinder(r=r, h=t+j*2, $fn=detail*2);
 
-			// Label
-			if(labelX > 0 && labelY > 0)
+			if(CutWindow == 1 && hole[x] > 0 && hole[y] > 0)
 			{
-				translate([labelOffset, 0, t/2]) cube([labelX, labelY, t+j*2], center=true, $fn=detail);
+				// Window
+				translate([o, 0, -j]) scale([1, 1/s, 1]) cylinder(r=r, h=t+j*2, $fn=detail*2);
 			}
-		}
-		
-		if(version>0)
-		{
-			translate([h/2, -(version-1)*t, t]) 
-			union()
+			
+			if(CutLabel == 1 && label[x] > 0 && label[y] > 0)
 			{
-				for(i = [0:version-1])
-				{
-					translate([0, t*2*i, 0])
-					cylinder(h=t/2, center=true);
-				}
+				translate([label[z], 0, t/2]) cube([label[x], label[y], t+j*2], center=true, $fn=detail);
 			}
 		}
 	}
 }
+
 
 // Size is the outside dimension
 module roundbox(size, r, t)
@@ -190,19 +219,19 @@ module roundbox(size, r, t)
 	{
 		hull()
 		{
-			translate([-r, -r, 0]) translate([ size[0]*0.5,  size[1]*0.5, 0]) cylinder(r=r, h=size[2], $fn=detail);
-			translate([ r, -r, 0]) translate([-size[0]*0.5,  size[1]*0.5, 0]) cylinder(r=r, h=size[2], $fn=detail);
-			translate([-r,  r, 0]) translate([ size[0]*0.5, -size[1]*0.5, 0]) cylinder(r=r, h=size[2], $fn=detail);
-			translate([ r,  r, 0]) translate([-size[0]*0.5, -size[1]*0.5, 0]) cylinder(r=r, h=size[2], $fn=detail);
+			translate([-r, -r, 0]) translate([ size[x]*0.5,  size[y]*0.5, 0]) cylinder(r=r, h=size[z], $fn=detail);
+			translate([ r, -r, 0]) translate([-size[x]*0.5,  size[y]*0.5, 0]) cylinder(r=r, h=size[z], $fn=detail);
+			translate([-r,  r, 0]) translate([ size[x]*0.5, -size[y]*0.5, 0]) cylinder(r=r, h=size[z], $fn=detail);
+			translate([ r,  r, 0]) translate([-size[x]*0.5, -size[y]*0.5, 0]) cylinder(r=r, h=size[z], $fn=detail);
 		}
 		if(t>0)
 		{
 			hull()
 			{
-				translate([-r, -r, -j]) translate([ size[0]*0.5,  size[1]*0.5, 0]) cylinder(r=r-t, h=size[2]+j*2, $fn=detail);
-				translate([ r, -r, -j]) translate([-size[0]*0.5,  size[1]*0.5, 0]) cylinder(r=r-t, h=size[2]+j*2, $fn=detail);
-				translate([-r,  r, -j]) translate([ size[0]*0.5, -size[1]*0.5, 0]) cylinder(r=r-t, h=size[2]+j*2, $fn=detail);
-				translate([ r,  r, -j]) translate([-size[0]*0.5, -size[1]*0.5, 0]) cylinder(r=r-t, h=size[2]+j*2, $fn=detail);
+				translate([-r, -r, -j]) translate([ size[x]*0.5,  size[y]*0.5, 0]) cylinder(r=r-t, h=size[z]+j*2, $fn=detail);
+				translate([ r, -r, -j]) translate([-size[x]*0.5,  size[y]*0.5, 0]) cylinder(r=r-t, h=size[z]+j*2, $fn=detail);
+				translate([-r,  r, -j]) translate([ size[x]*0.5, -size[y]*0.5, 0]) cylinder(r=r-t, h=size[z]+j*2, $fn=detail);
+				translate([ r,  r, -j]) translate([-size[x]*0.5, -size[y]*0.5, 0]) cylinder(r=r-t, h=size[z]+j*2, $fn=detail);
 			}
 		}
 	}
@@ -210,11 +239,21 @@ module roundbox(size, r, t)
 
 
 
-if(card_type == "class")
+if(CardType == "class")
 {
-	case(height=64, width=41, depth=5, holeX=30, holeY=30, holeOffset=4, labelX=5, labelY=25, labelOffset=-18);
+	case(ClassSize, ClassHole, ClassLabel);
 }
-if(card_type == "overlord")
+if(CardType == "overlord")
 {
-	case(height=89, width=58, depth=15, holeX=60, holeY=40, holeOffset=0, labelX=0, labelY=0, labelOffset=0);
+	case(OverlordSize, OverlordHole, OverlordLabel);
 }
+if(CardType == "custom")
+{
+	case(
+		[CustomHeight, CustomWidth, CustomThickness], 
+		[CustomWindowX, CustomWindowY, CustomWindowOffset], 
+		[CustomLabelX, CustomLabelY, CustomLabelOffset]
+	);
+}
+
+%build_plate(build_plate_selector, build_plate_manual_x, build_plate_manual_y);
